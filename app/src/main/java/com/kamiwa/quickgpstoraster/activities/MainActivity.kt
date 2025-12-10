@@ -5,16 +5,22 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Looper
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.chaquo.python.Python
+import com.chaquo.python.android.AndroidPlatform
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -23,6 +29,9 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.kamiwa.quickgpstoraster.R
 import com.kamiwa.quickgpstoraster.adapters.PointAdapter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -44,6 +53,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        if (! Python.isStarted()) {
+            Python.start(AndroidPlatform(this))
+        }
+        val py = Python.getInstance()
+        val module = py.getModule("create_raster")
+
         MapLibre.getInstance(this)
 
         // USTAWIENIA MAPY
@@ -74,6 +90,8 @@ class MainActivity : AppCompatActivity() {
         val pointListView = findViewById<RecyclerView>(R.id.mainActivity_pointListView)
         val pointAddButton = findViewById<Button>(R.id.mainActivity_addPointButton)
         val pointResetButton = findViewById<Button>(R.id.mainActivity_clearPointListButton)
+        val createRasterButton = findViewById<Button>(R.id.mainActivity_createRasterFromPoints)
+        val progressBar = findViewById<ProgressBar>(R.id.mainActivity_progressBar)
         val adapter = PointAdapter(pointList)
 
         pointListView.layoutManager = LinearLayoutManager(this)
@@ -88,6 +106,49 @@ class MainActivity : AppCompatActivity() {
             val pointListSize = pointList.size
             pointList.clear()
             adapter.notifyItemRangeRemoved(0, pointListSize)
+        }
+        createRasterButton.setOnClickListener {
+            if (pointList.size < 2){
+                Toast.makeText(this@MainActivity, "Wymagany co najmniej 2 punkty, aby stworzyć raster.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            progressBar.visibility = View.VISIBLE
+            createRasterButton.isEnabled = false
+
+            lifecycleScope.launch(Dispatchers.IO) { // wstawiłem to, by skrypt Pythona nie przeszkadzał kółku postępu się kręcić :3
+                try {
+                    val pyList = py.builtins.callAttr("list")
+                    for (triple in pointList) {
+                        val pyTuple = py.builtins.callAttr(
+                            "tuple",
+                            arrayOf(triple.first, triple.second, triple.third)
+                        )
+                        pyList.callAttr("append", pyTuple)
+                    }
+
+                    val currentTimeMillis = System.currentTimeMillis()
+                    val outputPath =
+                        getExternalFilesDir(null)?.absolutePath + "/raster_${currentTimeMillis}.tiff"
+                    val outputControlPointsPath =
+                        getExternalFilesDir(null)?.absolutePath + "/raster_${currentTimeMillis}.points"
+                    val rasterCreatorInstance = module.callAttr("RasterCreator", pyList, outputPath, outputControlPointsPath)
+                    rasterCreatorInstance.callAttr("create_raster")
+
+                    withContext(Dispatchers.Main) { // jak wyżej - dla kółka postępu :3
+                        progressBar.visibility = View.GONE
+                        createRasterButton.isEnabled = true
+                        Toast.makeText(this@MainActivity, "Raster created: $outputPath", Toast.LENGTH_LONG).show()
+                    }
+
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) { // jak wyżej - dla kółka postępu :3
+                        progressBar.visibility = View.GONE
+                        createRasterButton.isEnabled = true
+                        Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
         }
 
     }

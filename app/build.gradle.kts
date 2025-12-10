@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.chaquo.python")
 }
 
 android {
@@ -17,6 +18,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+        signingConfig = signingConfigs.getByName("debug")
     }
 
     buildTypes {
@@ -34,6 +40,26 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+    }
+    buildToolsVersion = "36.1.0"
+    ndkVersion = "28.2.13676358"
+    buildFeatures {
+        viewBinding = true
+    }
+    dependenciesInfo {
+        includeInApk = true
+        includeInBundle = true
+    }
+}
+
+chaquopy {
+    defaultConfig {
+        version = "3.13"
+
+        pip {
+            install("numpy")
+            install("pillow")
+        }
     }
 }
 
