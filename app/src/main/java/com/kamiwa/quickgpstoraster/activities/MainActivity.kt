@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -38,6 +39,7 @@ import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
 
@@ -110,7 +112,7 @@ class MainActivity : AppCompatActivity() {
             adapter.notifyItemRangeRemoved(0, pointListSize)
         }
         createRasterButton.setOnClickListener {
-            if (pointList.size < 2){
+            if (pointList.size < 3){
                 Toast.makeText(this@MainActivity, getString(R.string.toast_invalid_data), Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
@@ -147,6 +149,7 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) { // jak wyżej - dla kółka postępu :3
                         progressBar.visibility = View.GONE
                         createRasterButton.isEnabled = true
+                        Log.d("PYTHON_DEBUG", "${e.message}")
                         Toast.makeText(this@MainActivity, "${getString(R.string.toast_error)}: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
@@ -208,7 +211,7 @@ class MainActivity : AppCompatActivity() {
                 val latFormatted = formatCoordinate(location.latitude, true)
                 val lonFormatted = formatCoordinate(location.longitude, false)
 
-                locationTextView.text = "$latFormatted    $lonFormatted    (${location.altitude} m n.p.m.)"
+                locationTextView.text = "$latFormatted $lonFormatted\n(${location.altitude} m n.p.m.)"
                 mapView.getMapAsync { map ->
                     val position = CameraPosition.Builder()
                         .target(LatLng(location.latitude, location.longitude))
@@ -254,6 +257,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             if (coordinate >= 0) "E" else "W"
         }
-        return "${Math.abs(coordinate)} $direction"
+        return "${abs(coordinate)} $direction"
     }
 }

@@ -11,7 +11,7 @@
     <string name="btn_clear_points">Wyczyść listę</string>
     <string name="btn_create_raster">Utwórz raster</string>
 
-    <string name="toast_invalid_data">Potrzebujesz co najmniej 2 punkty, aby stworzyć raster.</string>
+    <string name="toast_invalid_data">Potrzebujesz co najmniej 3 punktów, aby stworzyć raster.</string>
     <string name="toast_success">Raster i punkty kontrolne zapisano w</string>
     <string name="toast_error">Błąd</string>
 </resources>

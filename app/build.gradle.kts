@@ -54,9 +54,11 @@ android {
 
 chaquopy {
     defaultConfig {
-        version = "3.13"
+        version = "3.10"
 
         pip {
+            install("pyproj")
+            install("shapely")
             install("numpy")
             install("pillow")
         }
