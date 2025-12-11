@@ -53,10 +53,7 @@ class RasterCreator:
                 weights = 1 / (dist ** power)
                 grid[y, x] = np.sum(weights * altitudes) / np.sum(weights)
 
-        grid_norm = (grid - grid.min()) / (grid.max() - grid.min())
-        grid_16bit = (grid_norm * 65535).astype(np.uint16)
-
-        image = Image.fromarray(grid_16bit)
+        image = Image.fromarray(grid)
         image.save(self.output_raster_path)
 
         with open(self.output_control_points_path, "w", encoding='utf-8') as f:
