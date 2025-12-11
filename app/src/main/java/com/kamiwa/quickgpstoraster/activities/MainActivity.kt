@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        if (! Python.isStarted()) {
+        if (!Python.isStarted()) {
             Python.start(AndroidPlatform(this))
         }
         val py = Python.getInstance()
@@ -111,15 +111,19 @@ class MainActivity : AppCompatActivity() {
             adapter.notifyItemRangeRemoved(0, pointListSize)
         }
         createRasterButton.setOnClickListener {
-            if (pointList.size < 3){
-                Toast.makeText(this@MainActivity, getString(R.string.toast_invalid_data), Toast.LENGTH_LONG).show()
+            if (pointList.size < 3) {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.toast_invalid_data),
+                    Toast.LENGTH_LONG
+                ).show()
                 return@setOnClickListener
             }
 
             progressBar.visibility = View.VISIBLE
             createRasterButton.isEnabled = false
 
-            lifecycleScope.launch(Dispatchers.IO) { // wstawiłem to, by skrypt Pythona nie przeszkadzał kółku postępu się kręcić :3
+            lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val pyList = py.builtins.callAttr("list")
                     for (triple in pointList) {
@@ -135,21 +139,34 @@ class MainActivity : AppCompatActivity() {
                         getExternalFilesDir(null)?.absolutePath + "/raster_${currentTimeMillis}.tiff"
                     val outputControlPointsPath =
                         getExternalFilesDir(null)?.absolutePath + "/raster_${currentTimeMillis}.points"
-                    val rasterCreatorInstance = module.callAttr("RasterCreator", pyList, outputPath, outputControlPointsPath)
+                    val rasterCreatorInstance = module.callAttr(
+                        "RasterCreator",
+                        pyList,
+                        outputPath,
+                        outputControlPointsPath
+                    )
                     rasterCreatorInstance.callAttr("create_raster")
 
-                    withContext(Dispatchers.Main) { // jak wyżej - dla kółka postępu :3
+                    withContext(Dispatchers.Main) {
                         progressBar.visibility = View.GONE
                         createRasterButton.isEnabled = true
-                        Toast.makeText(this@MainActivity, "${getString(R.string.toast_success)}: $outputPath", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            this@MainActivity,
+                            "${getString(R.string.toast_success)}: $outputPath",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
 
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main) { // jak wyżej - dla kółka postępu :3
+                    withContext(Dispatchers.Main) {
                         progressBar.visibility = View.GONE
                         createRasterButton.isEnabled = true
                         Log.d("PYTHON_DEBUG", "${e.message}")
-                        Toast.makeText(this@MainActivity, "${getString(R.string.toast_error)}: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            this@MainActivity,
+                            "${getString(R.string.toast_error)}: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             }
@@ -210,7 +227,8 @@ class MainActivity : AppCompatActivity() {
                 val latFormatted = formatCoordinate(location.latitude, true)
                 val lonFormatted = formatCoordinate(location.longitude, false)
 
-                locationTextView.text = "$latFormatted $lonFormatted\n(${location.altitude} m n.p.m.)"
+                locationTextView.text =
+                    "$latFormatted $lonFormatted\n(${location.altitude} m n.p.m.)"
                 mapView.getMapAsync { map ->
                     val position = CameraPosition.Builder()
                         .target(LatLng(location.latitude, location.longitude))
