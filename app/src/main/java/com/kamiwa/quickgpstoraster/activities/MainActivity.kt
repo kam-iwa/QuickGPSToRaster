@@ -2,6 +2,7 @@ package com.kamiwa.quickgpstoraster.activities
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.view.LayoutInflater
@@ -78,6 +79,7 @@ class MainActivity : AppCompatActivity() {
         mapView.getMapAsync { map ->
             map.setStyle("https://tiles.openfreemap.org/styles/liberty")
             map.cameraPosition = CameraPosition.Builder().target(LatLng(0.0, 0.0)).zoom(1.0).build()
+            map.uiSettings.setAllGesturesEnabled(false)
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -109,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         }
         createRasterButton.setOnClickListener {
             if (pointList.size < 2){
-                Toast.makeText(this@MainActivity, "Wymagany co najmniej 2 punkty, aby stworzyć raster.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, getString(R.string.toast_invalid_data), Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
 
@@ -138,14 +140,14 @@ class MainActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) { // jak wyżej - dla kółka postępu :3
                         progressBar.visibility = View.GONE
                         createRasterButton.isEnabled = true
-                        Toast.makeText(this@MainActivity, "Raster created: $outputPath", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@MainActivity, "${getString(R.string.toast_success)}: $outputPath", Toast.LENGTH_LONG).show()
                     }
 
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) { // jak wyżej - dla kółka postępu :3
                         progressBar.visibility = View.GONE
                         createRasterButton.isEnabled = true
-                        Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@MainActivity, "${getString(R.string.toast_error)}: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -202,8 +204,11 @@ class MainActivity : AppCompatActivity() {
                 latitude = location.latitude
                 longitude = location.longitude
                 altitude = location.altitude
-                locationTextView.text =
-                    "Lat: ${location.latitude} Lon: ${location.longitude} Alt: ${location.altitude}"
+
+                val latFormatted = formatCoordinate(location.latitude, true)
+                val lonFormatted = formatCoordinate(location.longitude, false)
+
+                locationTextView.text = "$latFormatted    $lonFormatted    (${location.altitude} m n.p.m.)"
                 mapView.getMapAsync { map ->
                     val position = CameraPosition.Builder()
                         .target(LatLng(location.latitude, location.longitude))
@@ -241,5 +246,14 @@ class MainActivity : AppCompatActivity() {
                 100
             )
         }
+    }
+
+    private fun formatCoordinate(coordinate: Double, isLatitude: Boolean): String {
+        val direction = if (isLatitude) {
+            if (coordinate >= 0) "N" else "S"
+        } else {
+            if (coordinate >= 0) "E" else "W"
+        }
+        return "${Math.abs(coordinate)} $direction"
     }
 }
