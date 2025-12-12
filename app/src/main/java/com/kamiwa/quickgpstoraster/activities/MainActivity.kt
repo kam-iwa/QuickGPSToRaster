@@ -8,7 +8,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ProgressBar
+import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -51,6 +53,9 @@ class MainActivity : AppCompatActivity() {
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
     private var altitude: Double = 0.0
+
+    private lateinit var radioGroup: RadioGroup
+    private lateinit var altitudeEditText: EditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,20 +100,63 @@ class MainActivity : AppCompatActivity() {
         val pointResetButton = findViewById<Button>(R.id.mainActivity_clearPointListButton)
         val createRasterButton = findViewById<Button>(R.id.mainActivity_createRasterFromPoints)
         val progressBar = findViewById<ProgressBar>(R.id.mainActivity_progressBar)
-        val adapter = PointAdapter(pointList)
+        val adapter = PointAdapter(pointList) { isEmpty ->
+            updateRadioGroupState(isEmpty)
+        }
+
+        radioGroup = findViewById<RadioGroup>(R.id.mainActivity_radioGroup)
+        altitudeEditText = findViewById<EditText>(R.id.mainActivity_customValueEditText)
+
+        radioGroup.setOnCheckedChangeListener { group, checkedId ->
+            updateAltitudeInputVisibility(checkedId)
+        }
+        updateAltitudeInputVisibility(radioGroup.checkedRadioButtonId)
 
         pointListView.layoutManager = LinearLayoutManager(this)
         pointListView.adapter = adapter
 
         pointAddButton.setOnClickListener {
-            val pointValues = Triple(latitude, longitude, altitude)
+            val altitudeValue = when (radioGroup.checkedRadioButtonId) {
+                R.id.mainActivity_radioAltitude -> {
+                    altitude
+                }
+                R.id.mainActivity_radioCustomValue -> {
+                    val inputText = altitudeEditText.text.toString()
+                    if (inputText.isEmpty()) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(R.string.toast_empty_value),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@setOnClickListener
+                    }
+
+                    try {
+                        inputText.toDouble()
+                    } catch (e: NumberFormatException) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(R.string.toast_invalid_value),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@setOnClickListener
+                    }
+                }
+                else -> altitude
+            }
+
+            val pointValues = Triple(latitude, longitude, altitudeValue)
             pointList.add(pointValues)
             adapter.notifyItemInserted(pointList.size - 1)
+
+            updateRadioGroupState(pointList.isNotEmpty())
         }
         pointResetButton.setOnClickListener {
             val pointListSize = pointList.size
             pointList.clear()
             adapter.notifyItemRangeRemoved(0, pointListSize)
+
+            updateRadioGroupState(false)
         }
         createRasterButton.setOnClickListener {
             if (pointList.size < 3) {
@@ -137,13 +185,10 @@ class MainActivity : AppCompatActivity() {
                     val currentTimeMillis = System.currentTimeMillis()
                     val outputPath =
                         getExternalFilesDir(null)?.absolutePath + "/raster_${currentTimeMillis}.tiff"
-                    val outputControlPointsPath =
-                        getExternalFilesDir(null)?.absolutePath + "/raster_${currentTimeMillis}.points"
                     val rasterCreatorInstance = module.callAttr(
                         "RasterCreator",
                         pyList,
-                        outputPath,
-                        outputControlPointsPath
+                        outputPath
                     )
                     rasterCreatorInstance.callAttr("create_raster")
 
@@ -275,5 +320,24 @@ class MainActivity : AppCompatActivity() {
             if (coordinate >= 0) "E" else "W"
         }
         return "${abs(coordinate)} $direction"
+    }
+
+    private fun updateAltitudeInputVisibility(checkedId: Int) {
+        when (checkedId) {
+            R.id.mainActivity_radioAltitude -> {
+                altitudeEditText.visibility = View.GONE
+            }
+            R.id.mainActivity_radioCustomValue -> {
+                altitudeEditText.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    private fun updateRadioGroupState(isLocked: Boolean) {
+        // Włącz/wyłącz wszystkie RadioButton w grupie
+        for (i in 0 until radioGroup.childCount) {
+            val radioButton = radioGroup.getChildAt(i)
+            radioButton.isEnabled = !isLocked
+        }
     }
 }

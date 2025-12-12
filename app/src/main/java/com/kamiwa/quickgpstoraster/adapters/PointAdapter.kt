@@ -9,7 +9,10 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.recyclerview.widget.RecyclerView
 import com.kamiwa.quickgpstoraster.R
 
-class PointAdapter(private val items: MutableList<Triple<Double, Double, Double>>) :
+class PointAdapter(
+    private val items: MutableList<Triple<Double, Double, Double>>,
+    private val onListEmptyChange: (Boolean) -> Unit = {}
+) :
     RecyclerView.Adapter<PointAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -36,6 +39,10 @@ class PointAdapter(private val items: MutableList<Triple<Double, Double, Double>
             if (pos != RecyclerView.NO_POSITION) {
                 items.removeAt(pos)
                 notifyItemRemoved(pos)
+
+                if (items.isEmpty()) {
+                    onListEmptyChange(false) // false = lista jest pusta, więc RadioGroup NIE jest zablokowany
+                }
             }
 
         }

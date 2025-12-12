@@ -57,10 +57,10 @@ chaquopy {
         version = "3.10"
 
         pip {
+            install("tifffile")
             install("pyproj")
             install("shapely")
             install("numpy")
-            install("pillow")
         }
     }
 }

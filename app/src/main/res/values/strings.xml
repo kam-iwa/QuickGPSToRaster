@@ -1,17 +1,25 @@
 <resources>
-    <string name="app_name">Quick GPS To Raster</string>
+    <string name="app_name">Android Quick Raster</string>
     <string name="app_footer">© 2025 Kamil Iwaniuk</string>
 
     <string name="val_latitude">Szerokość geogr.: </string>
     <string name="val_longitude">Długość geogr.: </string>
-    <string name="val_altitude">Wysokość: </string>
+    <string name="val_altitude">Wartość: </string>
     <string name="val_nodata">Brak danych lokalizacyjnych</string>
 
     <string name="btn_add_points">Dodaj punkt</string>
     <string name="btn_clear_points">Wyczyść listę</string>
     <string name="btn_create_raster">Utwórz raster</string>
 
+    <string name="radio_altitude">Wysokość z GPS</string>
+    <string name="radio_value">Wartość użytkownika</string>
+
+    <string name="number_write">Wpisz wartosć...</string>
+
     <string name="toast_invalid_data">Potrzebujesz co najmniej 3 punktów, aby stworzyć raster.</string>
     <string name="toast_success">Raster i punkty kontrolne zapisano w</string>
     <string name="toast_error">Błąd</string>
+    <string name="toast_empty_value">Wartość nie może być pusta</string>
+    <string name="toast_invalid_value">Podano nieprawidłową wartość</string>
+
 </resources>
